@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require("express");
 const router = express.Router();
 const { createProxyMiddleware } = require("http-proxy-middleware");
@@ -21,33 +22,50 @@ module.exports = (storedCredentials) => {
       },
     })
   );
-  router.post("/generateToken", async (req, res) => {
-    console.log("Received generateToken request");
-    console.log("Request body:", req.body);
+// Make sure 'crypto' is imported at the top of the file:
+// const crypto = require('crypto');
+// The following generateToken function is modified to make the entire login process more secure
+router.post("/generateToken", async (req, res) => {
     try {
-      if (!req.body || Object.keys(req.body).length === 0) {
-        throw new Error("Empty request body");
-      }
-  
-      const response = await axios.post(
-        "https://authapi.flattrade.in/trade/apitoken",
-        req.body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+        // 1. Get the temporary 'code' from our front-end's request
+        const { code } = req.body;
+        if (!code) {
+            return res.status(400).json({ message: "Request code is missing from front-end." });
         }
-      );
-      console.log("Flattrade API response:", response.data);
-      res.json(response.data);
+
+        // 2. Get your secret credentials from secure environment variables on Render
+        const apiKey = process.env.FLATTRADE_API_KEY;
+        const apiSecret = process.env.FLATTRADE_API_SECRET;
+
+        if (!apiKey || !apiSecret) {
+            return res.status(500).json({ message: "API Key or Secret is not configured on the server." });
+        }
+
+        // 3. Create the SHA256 hash securely on the server
+        const hash = crypto.createHash('sha256').update(apiKey + code + apiSecret).digest('hex');
+
+        // 4. Create the final payload to send to Flattrade
+        const flattradePayload = {
+            "api_key": apiKey,
+            "request_code": code,
+            "api_secret": hash
+        };
+
+        // 5. Make the secure request to Flattrade to get the final token
+        const response = await axios.post(
+            "https://authapi.flattrade.in/trade/apitoken",
+            flattradePayload,
+            { headers: { "Content-Type": "application/json" } }
+        );
+        
+        // 6. Send the successful response (which includes the token) back to our front-end
+        res.json(response.data);
+
     } catch (error) {
-      console.error("Error in generateToken:", error.message);
-      console.error("Full error object:", error);
-      res
-        .status(400)
-        .json({ message: "Error generating token", error: error.message });
+        console.error("Error in generateToken:", error.message);
+        res.status(500).json({ message: "Error generating token", error: error.message });
     }
-  });
+});
   router.get("/test", (req, res) => {
     console.log("Test route accessed");
     res.status(200).json({ message: "Flattrade router is working" });
