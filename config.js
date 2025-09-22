@@ -11,6 +11,7 @@ const config = {
       "https://steadfastapp.in",
       "https://www.steadfastapp.in",
       "https://api.steadfastapp.in",
+      "http://localhost:8080"
     ],
   },
 };
