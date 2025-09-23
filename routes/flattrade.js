@@ -111,6 +111,47 @@ router.post('/option-chain', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
   }
 });
+// added a new route flattrade-option-greek endpoint
+app.post('/flattrade/option-greek', async (req, res) => {
+    try {
+        const { jData, jKey } = req.body;
+
+        if (!jData || !jKey) {
+            return res.status(400).json({ error: 'Missing jData or jKey in request body' });
+        }
+        
+        const flattradeUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionGreek';
+        
+        const form = new URLSearchParams();
+        form.append('jData', jData);
+        form.append('jKey', jKey);
+
+        const response = await fetch(flattradeUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: form
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            // Forward the error message from Flattrade if available
+            throw new Error(responseData.emsg || `Request failed with status ${response.status}`);
+        }
+
+        // Forward the successful response from Flattrade back to our frontend
+        res.json(responseData);
+
+    } catch (error) {
+        console.error('Error in /flattrade/option-greek proxy:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch from Flattrade API', 
+            details: error.message 
+        });
+    }
+});
   router.get("/test", (req, res) => {
     console.log("Test route accessed");
     res.status(200).json({ message: "Flattrade router is working" });
