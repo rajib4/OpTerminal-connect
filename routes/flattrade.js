@@ -111,8 +111,8 @@ router.post('/option-chain', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
   }
 });
-// added a new route flattrade-option-greek endpoint
-app.post('/flattrade/option-greek', async (req, res) => {
+// added a new route flattrade option-greek endpoint (modified version)
+router.post('/option-greek', async (req, res) => {
     try {
         const { jData, jKey } = req.body;
 
@@ -137,11 +137,9 @@ app.post('/flattrade/option-greek', async (req, res) => {
         const responseData = await response.json();
 
         if (!response.ok) {
-            // Forward the error message from Flattrade if available
             throw new Error(responseData.emsg || `Request failed with status ${response.status}`);
         }
 
-        // Forward the successful response from Flattrade back to our frontend
         res.json(responseData);
 
     } catch (error) {
