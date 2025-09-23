@@ -66,6 +66,51 @@ router.post("/generateToken", async (req, res) => {
         res.status(500).json({ message: "Error generating token", error: error.message });
     }
 });
+// New route to fetch the NFO Scrip Master CSV
+router.get('/scrip-master', async (req, res) => {
+  try {
+    const response = await axios.get('https://flattrade.s3.ap-south-1.amazonaws.com/scripmaster/Nfo_Index_Derivatives.csv');
+    res.header('Content-Type', 'text/csv');
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error fetching scrip master:', error);
+    res.status(500).json({ error: 'Failed to fetch scrip master' });
+  }
+});
+// New route to proxy the GetOptionChain API call
+router.post('/option-chain', async (req, res) => {
+  try {
+    const { tsym, strprc, cnt, userId, apiToken } = req.body;
+
+    if (!tsym || !userId || !apiToken) {
+      return res.status(400).json({ error: 'Missing required parameters: tsym, userId, apiToken' });
+    }
+
+    const apiUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionChain';
+    
+    const jData = {
+      uid: userId,
+      exch: 'NFO',
+      tsym: tsym,
+      strprc: strprc || "",
+      cnt: cnt || '15'
+    };
+
+    const body = `jData=${JSON.stringify(jData)}&jKey=${apiToken}`;
+
+    const flattradeResponse = await axios.post(apiUrl, body, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    res.json(flattradeResponse.data);
+
+  } catch (error) {
+    console.error('Error in option chain proxy:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
+  }
+});
   router.get("/test", (req, res) => {
     console.log("Test route accessed");
     res.status(200).json({ message: "Flattrade router is working" });
