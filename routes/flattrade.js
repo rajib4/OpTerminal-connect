@@ -112,7 +112,42 @@ router.post('/option-chain', async (req, res) => {
   }
 });
 
+// Added new option-greek route
+router.post('/option-greek', async (req, res) => {
+    try {
+        const { jData, jKey } = req.body;
 
+        if (!jData) {
+            console.error("Proxy Error: jData is missing from the request body.");
+            return res.status(400).json({ error: 'jData is Missing from request body' });
+        }
+        if (!jKey) {
+            console.error("Proxy Error: jKey is missing from the request body.");
+            return res.status(400).json({ error: 'jKey is Missing from request body' });
+        }
+        
+        const flattradeUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionGreek';
+        
+        // The Flattrade API for this endpoint expects a URL-encoded form,
+        // where jData is a string of JSON.
+        const body = `jData=${jData}&jKey=${jKey}`;
+
+        const flattradeResponse = await axios.post(flattradeUrl, body, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+
+        res.json(flattradeResponse.data);
+
+    } catch (error) {
+        // Log the detailed error from the external API if available
+        const errorDetails = error.response ? error.response.data : error.message;
+        console.error('Error in /flattrade/option-greek proxy:', errorDetails);
+        res.status(500).json({ 
+            error: 'Failed to fetch from Flattrade API', 
+            details: errorDetails
+        });
+    }
+});
 
   router.get("/test", (req, res) => {
     console.log("Test route accessed");
