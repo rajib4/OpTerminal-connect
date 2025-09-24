@@ -77,40 +77,8 @@ router.get('/scrip-master', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch scrip master' });
   }
 });
-// New route to proxy the GetOptionChain API call
-router.post('/option-chain', async (req, res) => {
-  try {
-    const { tsym, strprc, cnt, userId, apiToken } = req.body;
 
-    if (!tsym || !userId || !apiToken) {
-      return res.status(400).json({ error: 'Missing required parameters: tsym, userId, apiToken' });
-    }
 
-    const apiUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionChain';
-    
-    const jData = {
-      uid: userId,
-      exch: 'NFO',
-      tsym: tsym,
-      strprc: strprc || "",
-      cnt: cnt || '15'
-    };
-
-    const body = `jData=${JSON.stringify(jData)}&jKey=${apiToken}`;
-
-    const flattradeResponse = await axios.post(apiUrl, body, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    res.json(flattradeResponse.data);
-
-  } catch (error) {
-    console.error('Error in option chain proxy:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
-  }
-});
 
 // Added new option-greek route
 router.post('/option-greek', async (req, res) => {
