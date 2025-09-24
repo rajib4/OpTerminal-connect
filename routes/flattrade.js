@@ -111,9 +111,10 @@ router.post('/option-chain', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
   }
 });
-// added a new route flattrade option-greek endpoint (modified version)
+// added a new route flattrade option-greek endpoint (modified v2)
 router.post('/option-greek', async (req, res) => {
     try {
+        // The frontend sends a payload like { jData: '{\"uid\":\"...\"}', jKey: '...' }
         const { jData, jKey } = req.body;
 
         if (!jData || !jKey) {
@@ -122,16 +123,18 @@ router.post('/option-greek', async (req, res) => {
         
         const flattradeUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionGreek';
         
-        const form = new URLSearchParams();
-        form.append('jData', jData);
-        form.append('jKey', jKey);
+        // We need to construct a payload where the value of jData is an object, not a string.
+        const payloadForFlattrade = {
+            jData: JSON.parse(jData), // Parse the jData string from the frontend back into an object
+            jKey: jKey
+        };
 
         const response = await fetch(flattradeUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
             },
-            body: form
+            body: JSON.stringify(payloadForFlattrade)
         });
 
         const responseData = await response.json();
