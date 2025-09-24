@@ -111,29 +111,31 @@ router.post('/option-chain', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
   }
 });
-// added a new route flattrade option-greek endpoint (modified v2)
+// added a new route flattrade option-greek endpoint (modified v3)
 router.post('/option-greek', async (req, res) => {
     try {
-        // The frontend sends a payload like { jData: '{\"uid\":\"...\"}', jKey: '...' }
         const { jData, jKey } = req.body;
 
-        if (!jData || !jKey) {
-            return res.status(400).json({ error: 'Missing jData or jKey in request body' });
+        // Add more specific error checking
+        if (!jData) {
+            console.error("Proxy Error: jData is missing from the request body.");
+            return res.status(400).json({ error: 'jData is Missing from request body' });
+        }
+        if (!jKey) {
+            console.error("Proxy Error: jKey is missing from the request body.");
+            return res.status(400).json({ error: 'jKey is Missing from request body' });
         }
         
         const flattradeUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionGreek';
         
-        // We need to construct a payload where the value of jData is an object, not a string.
         const payloadForFlattrade = {
-            jData: JSON.parse(jData), // Parse the jData string from the frontend back into an object
+            jData: JSON.parse(jData),
             jKey: jKey
         };
 
         const response = await fetch(flattradeUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payloadForFlattrade)
         });
 
