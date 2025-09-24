@@ -78,6 +78,21 @@ router.get('/scrip-master', async (req, res) => {
   }
 });
 
+// New route to make the login process easier
+
+router.get('/config', (req, res) => {
+    try {
+        const apiKey = process.env.FLATTRADE_API_KEY;
+        if (!apiKey) {
+            throw new Error("FLATTRADE_API_KEY is not configured on the server.");
+        }
+        res.json({ apiKey: apiKey });
+    } catch (error) {
+        console.error("Error in /flattrade/config:", error.message);
+        res.status(500).json({ error: "Server configuration error." });
+    }
+});
+
 // Modified option-chain route with validation and error handling
 router.post('/option-chain', async (req, res) => {
   try {
