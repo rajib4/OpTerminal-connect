@@ -111,50 +111,9 @@ router.post('/option-chain', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch option chain from Flattrade' });
   }
 });
-// added a new route flattrade option-greek endpoint (modified v3)
-router.post('/option-greek', async (req, res) => {
-    try {
-        const { jData, jKey } = req.body;
 
-        // Add more specific error checking
-        if (!jData) {
-            console.error("Proxy Error: jData is missing from the request body.");
-            return res.status(400).json({ error: 'jData is Missing from request body' });
-        }
-        if (!jKey) {
-            console.error("Proxy Error: jKey is missing from the request body.");
-            return res.status(400).json({ error: 'jKey is Missing from request body' });
-        }
-        
-        const flattradeUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionGreek';
-        
-        const payloadForFlattrade = {
-            jData: JSON.parse(jData),
-            jKey: jKey
-        };
 
-        const response = await fetch(flattradeUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payloadForFlattrade)
-        });
 
-        const responseData = await response.json();
-
-        if (!response.ok) {
-            throw new Error(responseData.emsg || `Request failed with status ${response.status}`);
-        }
-
-        res.json(responseData);
-
-    } catch (error) {
-        console.error('Error in /flattrade/option-greek proxy:', error.message);
-        res.status(500).json({ 
-            error: 'Failed to fetch from Flattrade API', 
-            details: error.message 
-        });
-    }
-});
   router.get("/test", (req, res) => {
     console.log("Test route accessed");
     res.status(200).json({ message: "Flattrade router is working" });
@@ -371,40 +330,6 @@ router.post('/option-greek', async (req, res) => {
         error: error.message,
       });
       console.error("Error fetching Flattrade orders and trades:", error);
-    }
-  });
-
-  // ===> Get Flattrade Option Greek
-  router.post("/getOptionGreek", async (req, res) => {
-    const jKey = req.headers.authorization?.split(" ")[1];
-    const { jData } = req.body;
-
-    if (!jKey) {
-      return res
-        .status(400)
-        .json({ message: "Token is missing. Please generate a token first." });
-    }
-
-    const payload = `jKey=${jKey}&jData=${jData}`;
-
-    try {
-      const response = await axios.post(
-        "https://piconnect.flattrade.in/PiConnectTP/GetOptionGreek",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
-      res.json(response.data);
-      console.log(`\nFlattrade Get Option Greek details:`, response.data);
-    } catch (error) {
-      res.status(500).json({
-        message: "Error getting Flattrade option Greek",
-        error: error.message,
-      });
-      console.error("Error getting Flattrade option Greek:", error);
     }
   });
 
