@@ -66,12 +66,24 @@ router.post("/generateToken", async (req, res) => {
         res.status(500).json({ message: "Error generating token", error: error.message });
     }
 });
-// New route to fetch the NFO Scrip Master CSV
+// New route to fetch the NFO Scrip Master CSV + BFO Scrip Master CSV
 router.get('/scrip-master', async (req, res) => {
   try {
-    const response = await axios.get('https://flattrade.s3.ap-south-1.amazonaws.com/scripmaster/Nfo_Index_Derivatives.csv');
+    const symbol = req.query.symbol;
+    let scripMasterUrl;
+
+    if (symbol === 'SENSEX') {
+      scripMasterUrl = 'https://flattrade.s3.ap-south-1.amazonaws.com/scripmaster/Bfo_Index_Derivatives.csv';
+      console.log('Fetching BFO scrip master for SENSEX');
+    } else {
+      scripMasterUrl = 'https://flattrade.s3.ap-south-1.amazonaws.com/scripmaster/Nfo_Index_Derivatives.csv';
+      console.log('Fetching NFO scrip master for', symbol || 'default');
+    }
+    
+    const response = await axios.get(scripMasterUrl);
     res.header('Content-Type', 'text/csv');
     res.send(response.data);
+
   } catch (error) {
     console.error('Error fetching scrip master:', error);
     res.status(500).json({ error: 'Failed to fetch scrip master' });
