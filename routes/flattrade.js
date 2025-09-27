@@ -105,28 +105,31 @@ router.get('/config', (req, res) => {
     }
 });
 
-// Modified option-chain route with validation and error handling
+// Modified option-chain route - changed hardcoded 'NFO' to dynamic 'exch'
 router.post('/option-chain', async (req, res) => {
   try {
-    const { tsym, strprc, cnt, userId, apiToken } = req.body;
+    // Destructure 'exch' from the request body as well
+    const { tsym, strprc, cnt, userId, apiToken, exch } = req.body;
 
-    if (!tsym || !userId || !apiToken) {
-      return res.status(400).json({ error: 'Missing required parameters: tsym, userId, apiToken' });
+    if (!tsym || !userId || !apiToken || !exch) { // Also check for exch
+      return res.status(400).json({ error: 'Missing required parameters: tsym, userId, apiToken, exch' });
     }
-    // Add validation to prevent sending invalid strprc
+
     if (!strprc || parseFloat(strprc) <= 0) {
         return res.status(400).json({ error: 'Invalid strprc parameter. Must be a positive number.' });
     }
 
     const apiUrl = 'https://piconnect.flattrade.in/PiConnectTP/GetOptionChain';
-    
+
     const jData = {
       uid: userId,
-      exch: 'NFO',
+      exch: exch, // Use the 'exch' from the frontend request
       tsym: tsym,
       strprc: strprc,
       cnt: cnt || '15'
     };
+
+    console.log('Proxying /option-chain request with jData:', jData); // Add logging for debugging
 
     const body = `jData=${JSON.stringify(jData)}&jKey=${apiToken}`;
 
@@ -134,10 +137,8 @@ router.post('/option-chain', async (req, res) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
-    // Check for Flattrade's specific error format before sending back
     if (flattradeResponse.data.stat === 'Not_Ok') {
         console.error('Flattrade API Error in /option-chain:', flattradeResponse.data.emsg);
-        // Forward a clean error to the frontend
         return res.status(502).json({ error: 'Failed to fetch option chain from Flattrade', details: flattradeResponse.data.emsg });
     }
 
