@@ -105,13 +105,13 @@ router.get('/config', (req, res) => {
     }
 });
 
-// Modified option-chain route with validation and error handling
+// Modified option-chain route - changed hardcoded 'NFO' to dynamic 'exch' parameter
 router.post('/option-chain', async (req, res) => {
   try {
-    const { tsym, strprc, cnt, userId, apiToken } = req.body;
+    const { exch, tsym, strprc, cnt, userId, apiToken } = req.body;
 
-    if (!tsym || !userId || !apiToken) {
-      return res.status(400).json({ error: 'Missing required parameters: tsym, userId, apiToken' });
+    if (!exch || !tsym || !userId || !apiToken) {
+      return res.status(400).json({ error: 'Missing required parameters: exch, tsym, userId, apiToken' });
     }
     // Add validation to prevent sending invalid strprc
     if (!strprc || parseFloat(strprc) <= 0) {
@@ -122,7 +122,7 @@ router.post('/option-chain', async (req, res) => {
     
     const jData = {
       uid: userId,
-      exch: 'NFO',
+      exch: exch, // <-- This is the fix
       tsym: tsym,
       strprc: strprc,
       cnt: cnt || '15'
